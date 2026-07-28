@@ -159,9 +159,17 @@ shared DuckDB.Contents = (
         OdbcDatasource = Odbc.DataSource(
             ConnectionString,
             Options
-        )
+        ),
+        // Value.NativeQuery support. EnableFolding is ignored: transforms evaluate client-side.
+        NativeQueryView = Table.View(OdbcDatasource, [
+            OnNativeQuery = (query, parameters, queryOptions) =>
+                if parameters <> null then
+                    error Error.Record("Expression.Error", "The DuckDB connector does not support native query parameters.")
+                else
+                    Odbc.Query(ConnectionString, query)
+        ])
     in
-        OdbcDatasource;
+        NativeQueryView;
 
 // Data Source Kind description
 DuckDB = [
